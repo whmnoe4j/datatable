@@ -87,6 +87,11 @@ centos:
 	docker build -t h2oai/datatable-centos -f Dockerfile-centos7 .
 	docker run -it --init --rm -v `pwd`:/dot -w /dot --entrypoint /bin/bash h2oai/datatable-centos -c 'python3.6 setup.py bdist_wheel'
 
+.PHONY: centos-ppc64le
+centos-ppc64le:
+	docker build -t h2oai/datatable-centos-ppc64le -f Dockerfile-centos7-ppc64le .
+	docker run -it --init --rm -v `pwd`:/dot -w /dot --entrypoint /bin/bash h2oai/datatable-centos-ppc64le -c 'python3.6 setup.py bdist_wheel'
+
 .PHONY: coverage
 coverage:
 	$(MAKE) clean

@@ -248,7 +248,7 @@ centos7_in_docker: Dockerfile-centos7.$(PLATFORM)
 		-w /dot \
 		--entrypoint /bin/bash \
 		$(CONTAINER_NAME_TAG) \
-		-c 'DTNOOMP=1 python3.6 setup.py bdist_wheel'
+		-c 'DTNOOPENMP=1 python3.6 setup.py bdist_wheel'
 	mkdir -p $(DIST_DIR)/$(PLATFORM)
 	mv $(DIST_DIR)/*.whl $(DIST_DIR)/$(PLATFORM)
 	echo $(VERSION) > $(DIST_DIR)/$(PLATFORM)/VERSION.txt

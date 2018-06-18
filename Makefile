@@ -218,6 +218,24 @@ centos7_in_docker: $(GEN_DOCKERFILE).tag
 	mv $(DIST_DIR)/*.whl $(DIST_DIR)/$(PLATFORM)
 	echo $(VERSION) > $(DIST_DIR)/$(PLATFORM)/VERSION.txt
 
+#
+# Ubuntu image - will be removed
+#
+Dockerfile-ubuntu.$(PLATFORM): ci/Dockerfile-ubuntu.in
+	cat $< | sed 's/FROM_SUBST/$(FROM_SUBST)/'g | sed 's/ARCH_SUBST/$(ARCH_SUBST)/g' > $@
+
+Dockerfile-ubuntu.$(PLATFORM).tag: Dockerfile-ubuntu.$(PLATFORM)
+	docker build \
+		-t $(CONTAINER_REPO_TAG) \
+		-f Dockerfile-ubuntu.$(PLATFORM) \
+		.
+	echo $(CONTAINER_REPO_TAG) > $@
+
+ubuntu_docker_build: Dockerfile-ubuntu.$(PLATFORM).tag
+
+ubuntu_docker_publish: Dockerfile-ubuntu.$(PLATFORM).tag
+	docker push $(CONTAINER_REPO_TAG)
+
 # Note:  We don't actually need to run mrproper in docker (as root) because
 #        the build step runs as the user.  But keep the API for consistency.
 mrproper_in_docker: mrproper

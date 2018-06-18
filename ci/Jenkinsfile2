@@ -28,7 +28,7 @@ def X86_64_LINUX_DOCKER_IMAGE = "docker.h2o.ai/opsh2oai/datatable-build-x86_64_u
 EXPECTED_SHAS = [
         files : [
                 'ci/Dockerfile-ubuntu.in' : '47087215fe899c38e12037e2d91dd4202988e98c',
-                'ci/Dockerfile-centos7.in': 'ae1ef9a0b3a665ea311c3a627108bd51ebcc3b93',
+                'ci/Dockerfile-centos7.in': '820934e80a9d63981bc687d7c0fd8244635fbb4f',
         ]
 ]
 
@@ -386,6 +386,13 @@ def getVenvActivationCmd(final platform, final venvName) {
         case 'x86_64_linux':
             return ". /envs/${venvName}/bin/activate"
         case 'x86_64_centos7':
+            if (venvName.toLowerCase().contains('py36')) {
+                return """
+                    rm -f /opt/h2oai/dai/python
+                    ln -s /opt/h2oai/dai/${venvName} /opt/h2oai/dai/python
+                    export LD_LIBRARY_PATH=LD_LIBRARY_PYTHON_35_PATH:${LD_LIBRARY_PATH}
+                """
+            }
             return ". activate ${venvName}"
         case 'x86_64_macos':
             return ". /Users/jenkins/anaconda/bin/activate ${venvName}"
@@ -476,4 +483,3 @@ def doPublish() {
 def isRelease() {
     return env.BRANCH_NAME.startsWith(RELEASE_BRANCH_PREFIX)
 }
-

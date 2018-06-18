@@ -5,21 +5,36 @@ MAINTAINER H2o.ai <ops@h2o.ai>
 RUN \
     yum groupinstall -y "Development Tools"
 
+ENV PYTHON_CONDA_PATH=/opt/h2oai/dai/python-conda
 RUN \
     yum install -y \
         ncurses-devel \
         zlib-devel \
         wget \
-        bzip2
+        bzip2 && \
+    wget -q https://repo.continuum.io/miniconda/Miniconda3-4.3.27-Linux-ARCH_SUBST.sh && \
+    bash Miniconda3-4.3.27-Linux-ARCH_SUBST.sh -b -p ${PYTHON_CONDA_PATH}
+
+ENV PATH=$PYTHON_CONDA_PATH:$PATH
 
 RUN \
     mkdir -p /opt/h2oai/dai
 
+ENV PYTHON_WITH_PANDAS_PATH=/opt/h2oai/dai/datatable-py36-with-pandas
+ENV PYTHON_WITH_NUMPY_PATH=/opt/h2oai/dai/datatable-py36-with-numpy
+ENV PYTHON_VANILLA_PATH=/opt/h2oai/dai/datatable-py36
+
 RUN \
     wget -q https://s3.amazonaws.com/artifacts.h2o.ai/releases/ai/h2o/dai-python/master-21/ARCH_SUBST-centos7DEBUG_SUBST/python.tar.bz2 && \
-    tar xf python.tar.bz2 && \
-    mv python /opt/h2oai/dai && \
-    rm -f python.tar.bz2
+    mkdir ${PYTHON_WITH_PANDAS_PATH} && \
+    tar -C ${PYTHON_WITH_PANDAS_PATH} --strip-components 1 -xf python.tar.bz2 && \
+    mkdir ${PYTHON_WITH_NUMPY_PATH} && \
+    tar -C ${PYTHON_WITH_NUMPY_PATH} --strip-components 1 -xf python.tar.bz2 && \
+    mkdir ${PYTHON_VANILLA_PATH} && \
+    tar -C ${PYTHON_VANILLA_PATH} --strip-components 1 -xf python.tar.bz2 && \
+    rm -f python.tar.bz2 python && \
+    ln -s ${PYTHON_WITH_PANDAS_PATH} /opt/h2oai/dai/python && \
+    chmod a+w /opt/h2oai/dai/python-*/lib/python3.6/site-packages/
 
 RUN \
     wget -q https://s3.amazonaws.com/artifacts.h2o.ai/releases/ai/h2o/dai-thirdparty-deps-llvm/1.0-master-21/ARCH_SUBST-centos7/llvm.tar.bz2 && \
@@ -29,12 +44,29 @@ RUN \
 
 ENV LLVM4=/opt/h2oai/dai
 ENV PATH=/opt/h2oai/dai/python/bin:$PATH
+ENV LD_LIBRARY_PYTHON_35_PATH=/opt/h2oai/dai/python-conda/envs/datatable-py35-with-pandas/lib
 ENV LD_LIBRARY_PATH=/opt/h2oai/dai/python/lib:$LD_LIBRARY_PATH
 ENV PATH=/usr/local/bin:$PATH
 ENV PATH=$LLVM4/bin:$PATH
 ENV PANDAS_VERSION=0.20.0
 
-RUN pip install llvmlite==0.20.0 wheel virtualenv
+RUN \
+    cd /opt/h2oai/dai && \
+    rm -f python && \
+    ln -s ${PYTHON_VANILLA_PATH} /opt/h2oai/dai/python && \
+    pip install llvmlite==0.20.0 wheel virtualenv && \
+    pip uninstall -y pandas || true && \
+    pip uninstall -y numpy || true && \
+    rm -f python && \
+    ln -s ${PYTHON_WITH_NUMPY_PATH} /opt/h2oai/dai/python && \
+    pip install llvmlite==0.20.0 wheel virtualenv && \
+    pip uninstall -y pandas || true && \
+    rm -f python && \
+    ln -s ${PYTHON_WITH_PANDAS_PATH} /opt/h2oai/dai/python && \
+    pip install llvmlite==0.20.0 wheel virtualenv && \
+    conda create -n datatable-py35-with-pandas python=3.5 && \
+    . activate datatable-py35-with-pandas && \
+    pip install --no-cache-dir pandas==${PANDAS_VERSION}
 
 RUN mv /opt/h2oai/dai/bin/clang++ /opt/h2oai/dai/bin/clang++2
 
@@ -42,4 +74,3 @@ RUN mv /opt/h2oai/dai/bin/clang++ /opt/h2oai/dai/bin/clang++2
 RUN mkdir -p /tmp/cores && chmod a+rwx /tmp/cores
 
 COPY ci/clang++_wrapper.sh /opt/h2oai/dai/bin/clang++
-

@@ -21,14 +21,14 @@ CREDS_ID = 'h2o-ops-personal-auth-token'
 GITCONFIG_CRED_ID = 'master-gitconfig'
 RSA_CRED_ID = 'master-id-rsa'
 
-def DOCKER_IMAGE_TAG = '0.3.2-PR-996.3'
+def DOCKER_IMAGE_TAG = '0.6.0-mr-debug-python.5'
 
-def X86_64_LINUX_DOCKER_IMAGE = "docker.h2o.ai/opsh2oai/datatable-build-x86_64_ubuntu:${DOCKER_IMAGE_TAG}"
+def X86_64_LINUX_DOCKER_IMAGE = "docker.h2o.ai/opsh2oai/datatable-build-x86_64-ubuntu-jenkins:${DOCKER_IMAGE_TAG}"
 
 EXPECTED_SHAS = [
         files : [
                 'ci/Dockerfile-ubuntu.in' : '47087215fe899c38e12037e2d91dd4202988e98c',
-                'ci/Dockerfile-centos7.in': '820934e80a9d63981bc687d7c0fd8244635fbb4f',
+                'ci/Dockerfile-centos7.in': '5374fa06c3c44263603ca04b4559fb4d38fc6c9f',
         ]
 ]
 
@@ -50,7 +50,7 @@ def PPC64LE_BUILD_CONF = platformDefaults + centosDefaults + [
         node       : 'ibm-power',
         coverage   : false,
         test       : false,
-        dockerImage: "docker.h2o.ai/opsh2oai/datatable-build-ppc64le_centos7:${DOCKER_IMAGE_TAG}"
+        dockerImage: "docker.h2o.ai/opsh2oai/datatable-build-ppc64le-centos7-jenkins:${DOCKER_IMAGE_TAG}"
 ]
 
 def LINUX_PLATFORM = 'x86_64_linux'
@@ -66,7 +66,7 @@ def BUILD_MATRIX = [
         x86_64_centos7: platformDefaults + centosDefaults + [
                 node       : 'docker && linux',
                 coverage   : false,
-                dockerImage: "docker.h2o.ai/opsh2oai/datatable-build-x86_64_centos7:${DOCKER_IMAGE_TAG}"
+                dockerImage: "docker.h2o.ai/opsh2oai/datatable-build-x86_64-centos7-jenkins:${DOCKER_IMAGE_TAG}"
         ],
         // OSX
         x86_64_macos  : platformDefaults + [
@@ -390,14 +390,23 @@ def getVenvActivationCmd(final platform, final venvName) {
                 return """
                     rm -f /opt/h2oai/dai/python
                     ln -s /opt/h2oai/dai/${venvName} /opt/h2oai/dai/python
-                    export LD_LIBRARY_PATH=LD_LIBRARY_PYTHON_35_PATH:${LD_LIBRARY_PATH}
+                    export LD_LIBRARY_PATH=LD_LIBRARY_PYTHON_35_PATH:\${LD_LIBRARY_PATH}
                 """
             }
             return ". activate ${venvName}"
         case 'x86_64_macos':
             return ". /Users/jenkins/anaconda/bin/activate ${venvName}"
         case 'ppc64le_linux':
-            return ". activate ${venvName}"
+            if (venvName.toLowerCase().contains('py36')) {
+                return """
+                    rm -f /opt/h2oai/dai/python
+                    ln -s /opt/h2oai/dai/${venvName} /opt/h2oai/dai/python
+                """
+            }
+            return """
+                . activate ${venvName}
+                export LD_LIBRARY_PATH=LD_LIBRARY_PYTHON_35_PATH:\${LD_LIBRARY_PATH}
+            """
     }
 }
 

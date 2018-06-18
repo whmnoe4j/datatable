@@ -15,7 +15,7 @@ RUN \
     wget -q https://repo.continuum.io/miniconda/Miniconda3-4.3.27-Linux-ARCH_SUBST.sh && \
     bash Miniconda3-4.3.27-Linux-ARCH_SUBST.sh -b -p ${PYTHON_CONDA_PATH}
 
-ENV PATH=$PYTHON_CONDA_PATH:$PATH
+ENV PATH=$PYTHON_CONDA_PATH/bin:$PATH
 
 RUN \
     mkdir -p /opt/h2oai/dai
@@ -33,8 +33,7 @@ RUN \
     mkdir ${PYTHON_VANILLA_PATH} && \
     tar -C ${PYTHON_VANILLA_PATH} --strip-components 1 -xf python.tar.bz2 && \
     rm -f python.tar.bz2 python && \
-    ln -s ${PYTHON_WITH_PANDAS_PATH} /opt/h2oai/dai/python && \
-    chmod a+w /opt/h2oai/dai/python-*/lib/python3.6/site-packages/
+    ln -s ${PYTHON_WITH_PANDAS_PATH} /opt/h2oai/dai/python
 
 RUN \
     wget -q https://s3.amazonaws.com/artifacts.h2o.ai/releases/ai/h2o/dai-thirdparty-deps-llvm/1.0-master-21/ARCH_SUBST-centos7/llvm.tar.bz2 && \
@@ -74,3 +73,6 @@ RUN mv /opt/h2oai/dai/bin/clang++ /opt/h2oai/dai/bin/clang++2
 RUN mkdir -p /tmp/cores && chmod a+rwx /tmp/cores
 
 COPY ci/clang++_wrapper.sh /opt/h2oai/dai/bin/clang++
+
+RUN  \
+    chmod a+w -R /opt/h2oai/dai
